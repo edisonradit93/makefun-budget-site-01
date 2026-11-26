@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HEARTHLEDGER — Household Budget &amp; Cashflow Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="masthead">
+      <div class="masthead-top">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 36 36" width="32" height="32">
+              <rect x="2" y="2" width="32" height="32" rx="8" fill="#1F5E4B" />
+              <path d="M9 17.5L18 10L27 17.5V26.5H21V20.5H15V26.5H9V17.5Z" fill="#FAF7F2" />
+              <circle cx="25.5" cy="10.5" r="3" fill="#C48A28" />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-eyebrow">Household Budget &amp; Cashflow Studio</div>
+            <h1 class="brand-title">HEARTHLEDGER</h1>
+          </div>
+        </div>
+
+        <div class="masthead-actions">
+          <div class="scenario-group" role="group" aria-label="Household Scenario Switcher">
+            <span class="control-label">Scenario</span>
+            <div class="scenario-pills" id="scenario-pills">
+              <button type="button" class="scenario-pill" data-scenario="young-family">Young Family</button>
+              <button type="button" class="scenario-pill" data-scenario="solo-renter">Solo Renter</button>
+              <button type="button" class="scenario-pill" data-scenario="debt-paydown">Debt Paydown Sprint</button>
+            </div>
+          </div>
+
+          <div class="utility-buttons">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-export-csv" title="Download transactions as CSV">Export CSV</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-export-json" title="Download full budget snapshot as JSON">Export JSON</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-sample" title="Restore current scenario defaults">Reset Sample</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="masthead-subbar">
+        <div class="household-meta" id="household-meta">
+          <strong id="household-name">The Mercer Household</strong>
+          <span class="meta-sep">·</span>
+          <span id="household-subtitle">Dual-income family · 2 adults, 1 toddler</span>
+          <span class="meta-badge" id="month-badge">November 2026</span>
+        </div>
+
+        <nav class="view-tabs" aria-label="Primary Workspace Views">
+          <button type="button" class="view-tab" data-view="overview">Overview &amp; Envelopes</button>
+          <button type="button" class="view-tab" data-view="transactions">Ledger &amp; Categories</button>
+          <button type="button" class="view-tab" data-view="goals">Savings &amp; Debt Goals</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <!-- KPI Summary Strip -->
+      <section class="kpi-strip" id="kpi-strip" aria-label="Monthly Cashflow Summary"></section>
+
+      <!-- VIEW: OVERVIEW -->
+      <section class="view-panel" id="view-overview" data-view-panel="overview">
+        <div class="overview-grid">
+          <article class="card allocation-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">50 / 30 / 20 Framework</p>
+                <h2 class="card-title">Household Allocation Balance</h2>
+              </div>
+              <div class="income-inline-editor">
+                <label for="income-input">Net Income</label>
+                <div class="currency-field">
+                  <span>$</span>
+                  <input type="number" id="income-input" min="500" step="50" aria-label="Monthly Net Income" />
+                </div>
+              </div>
+            </div>
+            <div id="allocation-bars"></div>
+          </article>
+
+          <article class="card trend-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">6-Month Trajectory</p>
+                <h2 class="card-title">Cashflow &amp; Net Savings Trend</h2>
+              </div>
+              <div class="legend-inline">
+                <span><i class="dot dot-income"></i>Income</span>
+                <span><i class="dot dot-expense"></i>Spend</span>
+                <span><i class="dot dot-savings"></i>Net Saved</span>
+              </div>
+            </div>
+            <div id="cashflow-chart"></div>
+          </article>
+        </div>
+
+        <div class="overview-secondary-grid">
+          <article class="card donut-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">Spending Breakdown</p>
+                <h2 class="card-title">Category Allocation Donut</h2>
+              </div>
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-clear-donut">All Categories</button>
+            </div>
+            <div class="donut-layout">
+              <div id="donut-chart"></div>
+              <div class="donut-legend" id="donut-legend"></div>
+            </div>
+          </article>
+
+          <article class="card envelopes-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">Monthly Envelopes</p>
+                <h2 class="card-title">Budget Limits &amp; Burn Sliders</h2>
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn btn-secondary btn-xs" id="btn-open-cat-modal">+ New Category</button>
+                <button type="button" class="btn btn-primary btn-xs" id="btn-quick-tx">+ Add Transaction</button>
+              </div>
+            </div>
+            <div class="envelopes-list" id="envelopes-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- VIEW: TRANSACTIONS -->
+      <section class="view-panel" id="view-transactions" data-view-panel="transactions" hidden>
+        <div class="transactions-layout">
+          <article class="card ledger-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">Activity Ledger</p>
+                <h2 class="card-title">Transactions &amp; Cashflow Entries</h2>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-add-tx">+ Log Transaction</button>
+            </div>
+
+            <div class="ledger-toolbar">
+              <div class="search-wrap">
+                <input type="search" id="tx-search" placeholder="Search merchant, note, or category..." aria-label="Search transactions" />
+              </div>
+              <select id="tx-filter-category" aria-label="Filter by category">
+                <option value="all">All Categories</option>
+              </select>
+              <select id="tx-filter-bucket" aria-label="Filter by 50/30/20 bucket">
+                <option value="all">All Buckets</option>
+                <option value="needs">Needs (50%)</option>
+                <option value="wants">Wants (30%)</option>
+                <option value="savings">Savings &amp; Debt (20%)</option>
+              </select>
+              <select id="tx-filter-type" aria-label="Filter by transaction type">
+                <option value="all">All Types</option>
+                <option value="expense">Expenses Only</option>
+                <option value="income">Income Only</option>
+              </select>
+              <select id="tx-sort" aria-label="Sort transactions">
+                <option value="date-desc">Newest First</option>
+                <option value="amount-desc">Highest Amount</option>
+                <option value="amount-asc">Lowest Amount</option>
+                <option value="merchant-asc">Merchant A–Z</option>
+              </select>
+            </div>
+
+            <div class="ledger-summary-bar" id="ledger-summary-bar"></div>
+            <div class="ledger-table-wrap" id="ledger-list"></div>
+          </article>
+
+          <aside class="card category-manager-card">
+            <div class="card-header">
+              <div>
+                <p class="card-kicker">Envelope Setup</p>
+                <h2 class="card-title">Manage Categories</h2>
+              </div>
+              <button type="button" class="btn btn-secondary btn-xs" id="btn-add-category-side">+ Add</button>
+            </div>
+            <div id="category-manager-list" class="category-manager-list"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- VIEW: GOALS -->
+      <section class="view-panel" id="view-goals" data-view-panel="goals" hidden>
+        <div class="goals-header-card card">
+          <div class="goals-header-inner">
+            <div>
+              <p class="card-kicker">Forward Horizon</p>
+              <h2 class="card-title">Savings Milestones &amp; Debt Payoff Planner</h2>
+              <p class="muted-copy">Drag any monthly contribution slider below to forecast the exact target or debt-free month using real APR compounding.</p>
+            </div>
+            <div class="goals-summary-pills" id="goals-summary-pills"></div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-add-goal">+ New Goal</button>
+          </div>
+        </div>
+
+        <div class="goals-grid" id="goals-grid"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>HEARTHLEDGER · Local-First Household Ledger (saved automatically to browser storage)</span>
+      <span id="footer-status">Offline · Zero external requests</span>
+    </footer>
+  </div>
+
+  <!-- Transaction Modal -->
+  <dialog class="modal" id="tx-modal" aria-labelledby="tx-modal-title">
+    <form method="dialog" class="modal-card" id="tx-form">
+      <div class="modal-header">
+        <h3 id="tx-modal-title">Add Transaction</h3>
+        <button type="button" class="modal-close" data-close-modal="tx-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="tx-edit-id" />
+        <div class="form-row-2">
+          <label class="field">
+            <span>Type</span>
+            <select id="tx-type" required>
+              <option value="expense">Expense / Transfer</option>
+              <option value="income">Income</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Date</span>
+            <input type="date" id="tx-date" required />
+          </label>
+        </div>
+        <div class="form-row-2">
+          <label class="field">
+            <span>Merchant / Source</span>
+            <input type="text" id="tx-merchant" placeholder="e.g., Trader Joe's" required maxlength="60" />
+          </label>
+          <label class="field">
+            <span>Amount ($)</span>
+            <input type="number" id="tx-amount" min="0.01" step="0.01" placeholder="0.00" required />
+          </label>
+        </div>
+        <label class="field" id="tx-category-field">
+          <span>Budget Category</span>
+          <select id="tx-category"></select>
+        </label>
+        <label class="field">
+          <span>Memo / Note</span>
+          <input type="text" id="tx-note" placeholder="Optional detail" maxlength="80" />
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="tx-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="tx-submit-btn">Save Entry</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Category Modal -->
+  <dialog class="modal" id="cat-modal" aria-labelledby="cat-modal-title">
+    <form method="dialog" class="modal-card" id="cat-form">
+      <div class="modal-header">
+        <h3 id="cat-modal-title">New Budget Category</h3>
+        <button type="button" class="modal-close" data-close-modal="cat-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="cat-edit-id" />
+        <label class="field">
+          <span>Category Name</span>
+          <input type="text" id="cat-name" placeholder="e.g., Pet Care & Vet" required maxlength="40" />
+        </label>
+        <div class="form-row-2">
+          <label class="field">
+            <span>50/30/20 Bucket</span>
+            <select id="cat-bucket" required>
+              <option value="needs">Needs (50%)</option>
+              <option value="wants">Wants (30%)</option>
+              <option value="savings">Savings &amp; Debt (20%)</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Monthly Limit ($)</span>
+            <input type="number" id="cat-limit" min="0" step="10" required />
+          </label>
+        </div>
+        <div class="field">
+          <span>Color Swatch</span>
+          <div class="swatch-picker" id="cat-swatch-picker"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="cat-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Category</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Goal Modal -->
+  <dialog class="modal" id="goal-modal" aria-labelledby="goal-modal-title">
+    <form method="dialog" class="modal-card" id="goal-form">
+      <div class="modal-header">
+        <h3 id="goal-modal-title">New Savings or Debt Goal</h3>
+        <button type="button" class="modal-close" data-close-modal="goal-modal" aria-label="Close modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span>Goal Name</span>
+          <input type="text" id="goal-name" placeholder="e.g., Home Down Payment" required maxlength="48" />
+        </label>
+        <div class="form-row-2">
+          <label class="field">
+            <span>Goal Type</span>
+            <select id="goal-type" required>
+              <option value="savings">Savings Reserve</option>
+              <option value="debt">Debt Payoff</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>APR / APY (%)</span>
+            <input type="number" id="goal-apr" min="0" max="40" step="0.1" value="4.2" required />
+          </label>
+        </div>
+        <div class="form-row-2">
+          <label class="field">
+            <span>Current Paid / Saved ($)</span>
+            <input type="number" id="goal-current" min="0" step="50" value="1000" required />
+          </label>
+          <label class="field">
+            <span>Target Total ($)</span>
+            <input type="number" id="goal-target" min="100" step="50" value="6000" required />
+          </label>
+        </div>
+        <label class="field">
+          <span>Monthly Contribution ($)</span>
+          <input type="number" id="goal-monthly" min="25" step="25" value="350" required />
+        </label>
+        <label class="field">
+          <span>Note</span>
+          <input type="text" id="goal-note" placeholder="Optional milestone note" maxlength="80" />
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal="goal-modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Goal</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Toast feedback -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

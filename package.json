@@ -1,0 +1,10 @@
+{
+  "name": "hearthledger-household-budget",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "HEARTHLEDGER — Warm Editorial Household Budget & Cashflow Studio",
+  "scripts": {
+    "build": "node main.ts"
+  }
+}
